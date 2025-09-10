@@ -24,6 +24,9 @@ function App() {
   // Q&A history: array of { id, question, answer, timestamp } persisted with localStorage
   const [history, setHistory] = useLocalStorage('qa_history', []);
 
+  // cap for max history items
+  const MAX_HISTORY = 200;
+
   // Derived flag to control submit button
   const canSubmit = useMemo(() => !!question.trim() && !loading, [question, loading]);
 
@@ -67,7 +70,11 @@ function App() {
         answer: response,
         timestamp: new Date().toISOString(),
       };
-      setHistory((prev) => [entry, ...prev]);
+      // Prepend and cap at MAX_HISTORY by slicing
+      setHistory((prev) => {
+        const next = [entry, ...(Array.isArray(prev) ? prev : [])];
+        return next.slice(0, MAX_HISTORY);
+      });
       setQuestion('');
 
       // Focus back to textarea for quick iterative questions
@@ -96,6 +103,16 @@ function App() {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
+  };
+
+  // PUBLIC_INTERFACE
+  /**
+   * PUBLIC_INTERFACE
+   * Delete a single history entry by id.
+   * @param {string} entryId
+   */
+  const deleteHistoryItem = (entryId) => {
+    setHistory((prev) => (Array.isArray(prev) ? prev.filter((h) => h.id !== entryId) : []));
   };
 
   // Clear all history
@@ -249,17 +266,39 @@ function App() {
             <ul className="history-list" aria-label="Q&A history">
               {history.map((item) => (
                 <li key={item.id} className="history-item">
-                  <button
-                    className="history-button"
-                    onClick={() => loadFromHistory(item.id)}
-                    title="Load this Q&A"
-                    aria-label={`Load Q and A from ${new Date(item.timestamp).toLocaleString()}`}
-                  >
-                    <span className="history-q">{item.question}</span>
-                    <span className="history-time">
-                      {new Date(item.timestamp).toLocaleString()}
-                    </span>
-                  </button>
+                  <div className="history-row">
+                    <button
+                      className="history-button"
+                      onClick={() => loadFromHistory(item.id)}
+                      title="Load this Q&A"
+                      aria-label={`Load Q and A from ${new Date(item.timestamp).toLocaleString()}`}
+                    >
+                      <span className="history-q">{item.question}</span>
+                      <span className="history-time">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => deleteHistoryItem(item.id)}
+                      aria-label="Delete this history item"
+                      title="Delete"
+                    >
+                      {/* Trash icon (SVG) for accessibility and no external deps */}
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M9 3H15M4 7H20M18 7L17 20C16.94 20.78 16.31 21.4 15.53 21.45H8.47C7.69 21.4 7.06 20.78 7 20L6 7M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

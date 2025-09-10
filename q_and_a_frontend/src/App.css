@@ -224,6 +224,14 @@ body {
 
 .history-item { margin: 0; }
 
+/* New wrapper to align history item button and delete icon */
+.history-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .history-button {
   width: 100%;
   text-align: left;
@@ -255,6 +263,30 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Minimal icon button, secondary look */
+.icon-button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 6px 16px rgba(25,118,210,0.12);
+}
+
+.icon-button:active { transform: translateY(1px); }
+.icon-button:focus-visible { outline: none; box-shadow: var(--focus); }
 
 /* Accessibility helpers */
 .sr-only {
