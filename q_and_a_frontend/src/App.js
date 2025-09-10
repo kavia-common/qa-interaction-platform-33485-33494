@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import './App.css';
 import { askQuestion } from './services/api';
 import useLocalStorage from './hooks/useLocalStorage';
+import Header from './components/Header';
 
 /**
  * PUBLIC_INTERFACE
@@ -159,22 +160,6 @@ function App() {
         </aside>
       </div>
     </div>
-  );
-}
-
-/**
- * Header component rendering the title and a subtle brand accent.
- * PUBLIC_INTERFACE
- */
-function Header() {
-  return (
-    <header className="header" role="banner">
-      <div className="brand">
-        <div className="brand-accent" />
-        <h1 className="title">Q&A Agent</h1>
-      </div>
-      <p className="subtitle">Ask questions and review your conversation history</p>
-    </header>
   );
 }
 
