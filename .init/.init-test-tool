@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/qa-interaction-platform-33485-33494/q_and_a_frontend"
+}
