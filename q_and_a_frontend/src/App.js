@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import './App.css';
 import { askQuestion } from './services/api';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -27,7 +27,25 @@ function App() {
   // Derived flag to control submit button
   const canSubmit = useMemo(() => !!question.trim() && !loading, [question, loading]);
 
+  // Refs and transient UI state
+  const textareaRef = useRef(null);
+  const copiedTimeoutRef = useRef(null);
+  const [copied, setCopied] = useState(false);
 
+  // Handle keydown in textarea for Enter/Cmd+Enter submit
+  const onTextareaKeyDown = (e) => {
+    const isEnter = e.key === 'Enter';
+    const isMac = navigator.platform && navigator.platform.toUpperCase().includes('MAC');
+    const metaOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+    // Submit on Cmd/Ctrl+Enter OR Enter without Shift. Shift+Enter inserts newline
+    if (isEnter && (metaOrCtrl || !e.shiftKey)) {
+      e.preventDefault();
+      if (canSubmit) {
+        handleSubmit(e);
+      }
+    }
+  };
 
   // Handle form submission
   // PUBLIC_INTERFACE
@@ -51,6 +69,11 @@ function App() {
       };
       setHistory((prev) => [entry, ...prev]);
       setQuestion('');
+
+      // Focus back to textarea for quick iterative questions
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
     } catch (err) {
       setError('Failed to get an answer. Please try again.');
     } finally {
@@ -66,6 +89,9 @@ function App() {
     setQuestion(item.question);
     setAnswer(item.answer);
     setError('');
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   };
 
   // Clear all history
@@ -75,6 +101,24 @@ function App() {
       setHistory([]);
       setAnswer('');
       setError('');
+    }
+  };
+
+  // PUBLIC_INTERFACE
+  /**
+   * PUBLIC_INTERFACE
+   * Copies the current answer to the clipboard, if available.
+   * Shows a brief "Copied!" state to provide feedback.
+   */
+  const copyAnswer = async () => {
+    if (!answer || typeof navigator?.clipboard?.writeText !== 'function') return;
+    try {
+      await navigator.clipboard.writeText(answer);
+      setCopied(true);
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+      copiedTimeoutRef.current = setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // Ignore copy failures silently to avoid noisy UX
     }
   };
 
@@ -94,16 +138,29 @@ function App() {
                 placeholder="Type your question here..."
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={onTextareaKeyDown}
                 rows={4}
                 aria-label="Question input"
+                aria-describedby="question-help"
+                ref={textareaRef}
               />
+              <span id="question-help" className="sr-only">
+                Press Enter to submit. Use Shift+Enter for a new line. On macOS use Command+Enter, on Windows/Linux use Ctrl+Enter.
+              </span>
               <div className="actions">
                 <button
                   type="submit"
                   className="btn"
                   disabled={!canSubmit}
                   aria-disabled={!canSubmit}
-                  title={!question.trim() ? 'Enter a question to ask' : 'Submit question'}
+                  aria-label={loading ? 'Asking, please wait' : 'Ask the agent'}
+                  title={
+                    !question.trim()
+                      ? 'Enter a question to ask'
+                      : loading
+                        ? 'Asking…'
+                        : 'Submit question'
+                  }
                 >
                   {loading ? 'Asking…' : 'Ask'}
                 </button>
@@ -118,9 +175,24 @@ function App() {
               <p className="placeholder">The agent’s answer will appear here.</p>
             )}
             {!error && (answer || loading) && (
-              <div className={`answer ${loading ? 'loading' : ''}`}>
-                {loading ? 'Thinking…' : answer}
-              </div>
+              <>
+                <div className={`answer ${loading ? 'loading' : ''}`} aria-live="polite">
+                  {loading ? 'Thinking…' : answer}
+                </div>
+                <div className="actions" style={{ justifyContent: 'flex-start' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={copyAnswer}
+                    disabled={!answer || loading}
+                    aria-disabled={!answer || loading}
+                    aria-label="Copy answer to clipboard"
+                    title={!answer ? 'No answer to copy' : 'Copy answer'}
+                  >
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </>
             )}
           </section>
         </main>
@@ -132,6 +204,8 @@ function App() {
               className="btn btn-secondary"
               onClick={clearHistory}
               disabled={history.length === 0}
+              aria-disabled={history.length === 0}
+              aria-label="Clear all history"
               title={history.length === 0 ? 'No history to clear' : 'Clear all history'}
             >
               Clear
@@ -147,6 +221,7 @@ function App() {
                     className="history-button"
                     onClick={() => loadFromHistory(item.id)}
                     title="Load this Q&A"
+                    aria-label={`Load Q and A from ${new Date(item.timestamp).toLocaleString()}`}
                   >
                     <span className="history-q">{item.question}</span>
                     <span className="history-time">
