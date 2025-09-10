@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import { askQuestion } from './services/api';
 
 /**
  * PUBLIC_INTERFACE
@@ -41,24 +42,7 @@ function App() {
   // Derived flag to control submit button
   const canSubmit = useMemo(() => !!question.trim() && !loading, [question, loading]);
 
-  // Simulated/placeholder API call to fetch an answer
-  // PUBLIC_INTERFACE
-  const getAnswerFromAgent = async (text) => {
-    /**
-     * This function simulates an API call. Replace its content with a real fetch:
-     * Example:
-     *   const res = await fetch(process.env.REACT_APP_API_URL + '/ask', {
-     *     method: 'POST',
-     *     headers: { 'Content-Type': 'application/json' },
-     *     body: JSON.stringify({ question: text })
-     *   });
-     *   const data = await res.json();
-     *   return data.answer;
-     */
-    await new Promise((r) => setTimeout(r, 800)); // simulate latency
-    // Provide a sensible placeholder response
-    return `This is a placeholder answer for: "${text}". Integrate with your backend API to return real agent responses.`;
-  };
+
 
   // Handle form submission
   // PUBLIC_INTERFACE
@@ -71,7 +55,7 @@ function App() {
     setAnswer('');
 
     try {
-      const response = await getAnswerFromAgent(question.trim());
+      const response = await askQuestion(question.trim());
       setAnswer(response);
 
       const entry = {
