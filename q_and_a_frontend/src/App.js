@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import './App.css';
 import { askQuestion } from './services/api';
+import useLocalStorage from './hooks/useLocalStorage';
 
 /**
  * PUBLIC_INTERFACE
@@ -19,25 +20,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   // Error message state
   const [error, setError] = useState('');
-  // Q&A history: array of { id, question, answer, timestamp }
-  const [history, setHistory] = useState(() => {
-    // Initialize from localStorage to persist across refreshes
-    try {
-      const stored = localStorage.getItem('qa_history');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Keep localStorage synced
-  useEffect(() => {
-    try {
-      localStorage.setItem('qa_history', JSON.stringify(history));
-    } catch {
-      // ignore storage errors gracefully
-    }
-  }, [history]);
+  // Q&A history: array of { id, question, answer, timestamp } persisted with localStorage
+  const [history, setHistory] = useLocalStorage('qa_history', []);
 
   // Derived flag to control submit button
   const canSubmit = useMemo(() => !!question.trim() && !loading, [question, loading]);
