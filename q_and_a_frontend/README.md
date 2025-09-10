@@ -27,24 +27,41 @@ Launches the test runner.
 ### `npm run build`
 Builds the app for production to the `build` folder.
 
-## Integrating a Backend/API
+## Backend/API Integration
 
-The app currently uses a placeholder method to simulate agent responses.
-To integrate a real backend:
+The app supports calling a real backend automatically when the environment variable `REACT_APP_API_URL` is set. If not set, it falls back to a built‑in mock that simulates latency and returns a placeholder answer.
 
-1. Set an environment variable for your API base:
-   - Add REACT_APP_API_URL in a .env file (do not commit secrets).
-2. Replace the getAnswerFromAgent function in src/App.js:
+- Endpoint expected: `POST {REACT_APP_API_URL}/ask`
+- Request body: `{ "question": string }`
+- Response body: `{ "answer": string }`
+
+### Quick setup
+
+1. Create a `.env` file at the project root (same folder as `package.json`) and define:
    ```
-   const res = await fetch(process.env.REACT_APP_API_URL + '/ask', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ question: text })
-   });
-   const data = await res.json();
-   return data.answer;
+   REACT_APP_API_URL=https://your-backend.example.com
    ```
-3. Ensure CORS is enabled on your backend.
+   Note: Do not commit secrets. Environment variables prefixed with `REACT_APP_` are embedded at build time by Create React App.
+
+2. Ensure your backend has CORS enabled for the frontend origin during development.
+
+3. Start or rebuild the app after changing `.env`:
+   - For dev: stop and run `npm start` again so env vars are picked up.
+   - For prod: run `npm run build` to generate a build with the correct env.
+
+No additional code changes are necessary. The file `src/services/api.js` will:
+- Use `fetch` to call `POST {REACT_APP_API_URL}/ask` when `REACT_APP_API_URL` is present.
+- Fallback to a mock answer when it’s not set.
+
+### Optional: UI conditionals
+
+`src/services/api.js` also exports a boolean `isMock` you can use for small UI hints, e.g., displaying a banner in development when the mock is active.
+
+Example:
+```js
+import { isMock } from './services/api';
+// if (isMock) { /* show "Running in mock mode" hint */ }
+```
 
 ## Notes
 
