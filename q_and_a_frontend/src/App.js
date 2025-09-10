@@ -75,7 +75,11 @@ function App() {
         textareaRef.current.focus();
       }
     } catch (err) {
-      setError('Failed to get an answer. Please try again.');
+      // Surface user-friendly error message coming from API layer when possible
+      const message =
+        (err && typeof err.message === 'string' && err.message) ||
+        'Failed to get an answer. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -120,6 +124,17 @@ function App() {
     } catch {
       // Ignore copy failures silently to avoid noisy UX
     }
+  };
+
+  // PUBLIC_INTERFACE
+  /**
+   * PUBLIC_INTERFACE
+   * Retry the last submission (using current question field).
+   */
+  const retry = async () => {
+    if (!question.trim() || loading) return;
+    // Create a synthetic event-like payload for handleSubmit
+    await handleSubmit({ preventDefault: () => {} });
   };
 
   return (
@@ -170,7 +185,24 @@ function App() {
 
           <section className="card">
             <h2 className="section-title">Agent answer</h2>
-            {error && <div role="alert" className="alert">{error}</div>}
+            {error && (
+              <>
+                <div role="alert" className="alert">{error}</div>
+                <div className="actions" style={{ justifyContent: 'flex-start' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={retry}
+                    disabled={!question.trim() || loading}
+                    aria-disabled={!question.trim() || loading}
+                    aria-label="Retry"
+                    title={!question.trim() ? 'Enter a question to retry' : 'Retry'}
+                  >
+                    Retry
+                  </button>
+                </div>
+              </>
+            )}
             {!error && !answer && !loading && (
               <p className="placeholder">The agent’s answer will appear here.</p>
             )}
